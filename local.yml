@@ -1,0 +1,51 @@
+version: '3'
+
+volumes:
+  authystem_local_postgres_data: {}
+  authystem_local_postgres_data_backups: {}
+
+services:
+  django:
+    build:
+      context: .
+      dockerfile: ./compose/local/django/Dockerfile
+    image: authystem_local_django
+    container_name: authystem_local_django
+    depends_on:
+      - postgres
+    volumes:
+      - .:/app:z
+    env_file:
+      - ./.envs/.local/.django
+      - ./.envs/.local/.postgres
+    ports:
+      - '8000:8000'
+    command: /start
+
+  postgres:
+    build:
+      context: .
+      dockerfile: ./compose/production/postgres/Dockerfile
+    image: authystem_production_postgres
+    container_name: authystem_local_postgres
+    volumes:
+      - authystem_local_postgres_data:/var/lib/postgresql/data
+      - authystem_local_postgres_data_backups:/backups
+    env_file:
+      - ./.envs/.local/.postgres
+
+  docs:
+    image: authystem_local_docs
+    container_name: authystem_local_docs
+    build:
+      context: .
+      dockerfile: ./compose/local/docs/Dockerfile
+    env_file:
+      - ./.envs/.local/.django
+    volumes:
+      - ./docs:/docs:z
+      - ./config:/app/config:z
+      - ./authystem:/app/authystem:z
+    ports:
+      - '9000:9000'
+    command: /start-docs
